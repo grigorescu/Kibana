@@ -353,13 +353,7 @@ class LogstashLoader {
         foreach ($result->hits->hits as $hitkey => $hit) {
           $i++;
           $hit_id = $hit->{'_id'};
-		ob_start();
-		print_r($hit);
-		$var = ob_get_contents();
-		ob_end_clean();
-		$fp=fopen('/tmp/data.txt','w');
-		fputs($fp,$var);
-		fclose($fp);
+		
           $return->results[$hit_id]['@cabin_time'] =
               date('m/d H:i:s', intval($hit->{'_source'}->{'ts'})/1000);
           $return->results[$hit_id]['ts'] =
@@ -381,7 +375,7 @@ class LogstashLoader {
         }
         //sort($return->all_fields);
     }
-    if (sizeof($req->fields) == 0) $req->fields = array("uid", "id.orig_h", "id.resp_h", "id.orig_p", "id.resp_h", "host", "note", "query");
+    if (sizeof($req->fields) == 0) $req->fields = array("uid", "id.orig_h", "id.resp_h", "id.orig_p", "id.resp_p", "host", "note", "query");
     $return->fields_requested = $req->fields;
     $return->elasticsearch_json = json_encode($query);
 

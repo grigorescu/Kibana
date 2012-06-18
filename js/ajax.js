@@ -830,7 +830,7 @@ function addCommas(nStr) {
 function renderDateTimePicker(from, to, force) {
   if (!$('#timechange').length || force == true) {
     var maxDateTime = new Date();
-    // set to midnight of current day
+	// set to midnight of current day
     maxDateTime.setHours(23,59,59,999);
     $('#graphheader').html("<center>" +
       "<input size=19 id=timefrom class=hasDatePicker " +
@@ -949,7 +949,7 @@ function logGraph(data, interval, metric) {
     array.push(
       Array(Date.parse(window.resultjson.time.to) + window.tOffset, null));
   }
-  renderDateTimePicker(array[0][0],array[array.length -1][0],true);
+  renderDateTimePicker(array[2][0],array[array.length -2][0],true);
 
 
   // Make sure we get results before calculating graph stuff
@@ -1007,7 +1007,7 @@ function logGraph(data, interval, metric) {
 
     $.plot(
     $("#graph"), [{
-      data: array,
+      data: array.slice(2,array.length-2),
       label: label + " per " + (parseInt(interval) / 1000) + "s"
     }], {
       series: {
