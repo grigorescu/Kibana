@@ -172,7 +172,7 @@ class LogstashLoader {
     }
 
     $query->size = $this->config['results_per_page'];
-    $query->sort->{'@timestamp'}->order = 'desc';
+    $query->sort->{'ts'}->order = 'desc';
 
     // Unless the user gives us exact times, compute relative
     // timeframe based on drop down
@@ -181,16 +181,18 @@ class LogstashLoader {
       if($req->timeframe == 'all') {
         $time->from = date('c', strtotime("100 years ago"));
       } else {
-        $time->from = date('c', strtotime("{$req->timeframe} ago"));
+		list($usec, $sec) = microtime(strtotime("{$req->timeframe} ago"));
+        $time->from = $sec*1000 + $usec/1000;
       }
-      $time->to = date('c');
+	 list($usec, $sec) = microtime();
+     $time->from = $sec*1000 + $usec/1000;
     }
 
     $req->time = $time;
 
     // Check if we have a time range, if so filter
     if ($time != '') {
-      $query->query->filtered->filter->range->{'@timestamp'} = $time;
+      $query->query->filtered->filter->range->{'ts'} = $time;
       // Figure out which indices to search
       if ($this->config['smart_index']) {
         $this->index_array = $this->getIndicesByTime(
@@ -205,7 +207,7 @@ class LogstashLoader {
         unset($query->sort);
         $query->size = 0;
         $query->facets->histo1->date_histogram->field =
-          "@timestamp";
+          "ts";
         $query->facets->histo1->date_histogram->interval =
           $req->interval;
         break;
@@ -213,7 +215,7 @@ class LogstashLoader {
         unset($query->sort);
         $query->size = 0;
         $query->facets->histo1->date_histogram->key_field =
-          "@timestamp";
+          "ts";
         $query->facets->histo1->date_histogram->value_field =
           $req->analyze_field;
         $query->facets->histo1->date_histogram->interval =
@@ -341,23 +343,28 @@ class LogstashLoader {
       default:
         $result->hits->hits = array_slice($result->hits->hits, 0, $slice);
         $base_fields = array_values(array_unique(array_merge(
-          array('@message'),
+          array('ts', 'uid', 'host', 'id.orig_h', 'id.resp_h', 'note'),
           $this->config['default_fields'])));
         $return->all_fields = array_values(array_unique(array_merge(
-          array('@message'),
+          array('ts', 'uid', 'host', 'id.orig_h', 'id.resp_h', 'note'),
           $this->config['default_fields'])));
         $return->page_count = count($result->hits->hits);
         $i=0;
         foreach ($result->hits->hits as $hitkey => $hit) {
           $i++;
           $hit_id = $hit->{'_id'};
-          $hit->fields = $hit->{'_source'};
+		ob_start();
+		print_r($hit);
+		$var = ob_get_contents();
+		ob_end_clean();
+		$fp=fopen('/tmp/data.txt','w');
+		fputs($fp,$var);
+		fclose($fp);
           $return->results[$hit_id]['@cabin_time'] =
-              date('m/d H:i:s', strtotime(
-                  $hit->fields->{'@timestamp'}));
-          $return->results[$hit_id]['@timestamp'] =
-              $hit->fields->{'@timestamp'};
-          foreach ($hit->fields->{'@fields'} as $name => $value) {
+              date('m/d H:i:s', intval($hit->{'_source'}->{'ts'})/1000);
+          $return->results[$hit_id]['ts'] =
+              $hit->{'_source'}->{'ts'};
+          foreach ($hit->{'_source'} as $name => $value) {
             if (is_array($value))
               $value = implode(',',$value);
             $return->results[$hit_id][$name] = $value;
@@ -368,13 +375,13 @@ class LogstashLoader {
 
           foreach ($base_fields as $field) {
             $return->results[$hit_id][$field] =
-              $hit->fields->{$field};
+              $hit->{'_source'}->{$field};
           }
           unset($result->hits->hits[$i]);
         }
         //sort($return->all_fields);
     }
-    if (sizeof($req->fields) == 0) $req->fields = array('@message');
+    if (sizeof($req->fields) == 0) $req->fields = array("uid", "id.orig_h", "id.resp_h", "id.orig_p", "id.resp_h", "host", "note", "query");
     $return->fields_requested = $req->fields;
     $return->elasticsearch_json = json_encode($query);
 
@@ -397,7 +404,7 @@ class LogstashLoader {
   protected function rssFeed ($req, $query, $return) {
 
     if (sizeof($req->fields) < 1)
-      $req->fields = array('@message');
+      $req->fields = array('ts');
 
     $pDom = new DOMDocument();
 
@@ -452,11 +459,11 @@ class LogstashLoader {
 
       $pTitle = $pDom->createElement('title');
       $pLink  = $pDom->createElement('pubDate',
-        date('r',strtotime($result['@timestamp'])));
+        date('r',strtotime($result['ts'])));
       $pDesc  = $pDom->createElement('description');
 
       $pTitleText = $pDom->createTextNode(implode(', ',$a_pTitle));
-      $pDescText  = $pDom->createTextNode($result['@message']);
+      $pDescText  = $pDom->createTextNode($result['ts']);
 
       $pTitle->appendChild($pTitleText);
       $pDesc->appendChild($pDescText);
@@ -482,7 +489,7 @@ class LogstashLoader {
   protected function csvFeed ($req, $query, $return) {
 
     if (sizeof($req->fields) < 1)
-      $req->fields = array('@message');
+      $req->fields = array('ts');
 
     $e_query = $req->search;
 
@@ -493,7 +500,7 @@ class LogstashLoader {
     foreach ($return->results as $result) {
       $csv_line = array();
       array_push($csv_line,
-        date('Y-m-d H:i:s',strtotime($result['@timestamp'])));
+        date('Y-m-d H:i:s',strtotime($result['ts'])));
       foreach ($req->fields as $field) {
         if (is_array($result[$field])) {
           array_push($csv_line,implode('+',$result[$field]));
@@ -566,7 +573,7 @@ class LogstashLoader {
     unset($result);
     $analyze = array_count_values($analyze);
 
-    $query->sort->{'@timestamp'}->order = 'asc';
+    $query->sort->{'ts'}->order = 'asc';
     $result = $this->esQuery($query);
     $return->analysis->count = count($result->hits->hits);
     $analyze2 = self::collectFieldValues($result->hits->hits, $field);
@@ -634,7 +641,7 @@ class LogstashLoader {
 
     $indices = $result->indices;
     $totaldocs = 0;
-    if ($this->config['default_index'] == "_all") {
+    if ($this->config['default_index'] == "ts") {
       foreach ($indices as $index) {
         $totaldocs += $index->docs->num_docs;
       }
@@ -671,7 +678,7 @@ class LogstashLoader {
     
     $aryRange = array_intersect($aryRange, $this->getAllIndices());
     if (count($aryRange) > $this->config['smart_index_limit']) {
-      $aryRange = array('_all');
+      $aryRange = array('ts');
     }
     rsort($aryRange);
 

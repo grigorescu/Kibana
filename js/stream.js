@@ -40,7 +40,7 @@ function getStream() {
       str += "</thead>";
       for (var obj in data.results) {
         if (!(hasTime)) {
-          window.lastTime = (data.results[obj])['@timestamp'];
+          window.lastTime = (data.results[obj])['ts'];
           hasTime = true;
         }
         if ($('#logrow_' + obj).length == 0) {

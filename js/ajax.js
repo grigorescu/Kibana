@@ -123,10 +123,8 @@ function getPage() {
         //Parse out the window hash
         window.resultjson = JSON.parse(json);
 
-        //console.log(
-        //  'curl -XGET \'http://elasticsearch:9200/'+resultjson.indices+
-        //  '/_search?pretty=true\' -d\''+resultjson.elasticsearch_json+'\'');
-        //console.log(resultjson);
+        console.log('curl -XGET \'http://elasticsearch:9200/'+resultjson.indices+'/_search?pretty=true\' -d\''+resultjson.elasticsearch_json+'\'');
+        console.log(resultjson);
 
         $('#graphheader,#graph').text("");
 
@@ -589,7 +587,7 @@ function CreateLogTable(objArray, fields, theme, enableHeader) {
 
   // If no fields are specified, display @message
   if (fields.toString() === "") {
-    fields[0] = '@message';
+    fields = ["uid", "id.orig_h", "id.resp_h", "id.orig_p", "id.resp_h", "host", "note", "query"];
   }
 
   var str = '<table class="' + theme + '">';
@@ -615,7 +613,7 @@ function CreateLogTable(objArray, fields, theme, enableHeader) {
     }
     str += '<td class=firsttd>' + array[objid]['@cabin_time'] + '</td>';
     for (var index in fields) {
-      if(array[objid][fields[index]] === undefined) {
+      if(array[objid][fields[index]] == null) {
         tdvalue = "-"
       } else {
         tdvalue = array[objid][fields[index]].toString();
@@ -946,7 +944,7 @@ function logGraph(data, interval, metric) {
     value = data[index][metric];
     array.push(Array(data[index].time + window.tOffset, value));
   }
-  if(typeof window.resultjson.time !== 'undefined') {
+  if(typeof window.resultjson.time.to == 'undefined') {
     // add null value at time to.
     array.push(
       Array(Date.parse(window.resultjson.time.to) + window.tOffset, null));

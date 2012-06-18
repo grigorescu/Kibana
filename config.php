@@ -2,7 +2,7 @@
 
 $KIBANA_CONFIG = array(
   // Your elastic search server
-  'elasticsearch_server' => "elasticsearch:9200",
+  'elasticsearch_server' => "localhost:9200",
 
   // URL path to kibana. Apache users can safely leave this
   // blank in most situations.
@@ -33,7 +33,7 @@ $KIBANA_CONFIG = array(
   // searching 1 index at a time over a certain threshold may not be desirable  
 
   // ElasticSearch has a default limit on URL size for REST calls,
-  // so Kibana will fall back to _all if a search spans too many
+  // so Kibana will fall back to ts if a search spans too many
   // indices. Use this to set that 'too many' number. 
   'smart_index_limit' => 60,
 
@@ -59,25 +59,99 @@ $KIBANA_CONFIG = array(
   // in your results. Logstash has some default fields that it also
   // supplies. You might want to enable or disable some of those.
   'default_fields' => array(
-    '@type',
-    '@tags',
-    '@source_host',
-    '@source_path',
-    '@timestamp',
-    '@source',
+    'ts',
+	'to',
+	'subject',
+	'from',
+	'helo',
+	'rcptto',
+	'path',
+	'user_agent',
+	'resp_pkts',
+	'orig_pkts',
+	'local_orig',
+	'proto',
+	'orig_bytes',
+	'conn_state',
+	'history',
+	'duration',
+	'resp_ip_bytes',
+	'resp_bytes',
+	'orig_ip_bytes',
+	'service',
+	'priority',
+	'action',
+	'message',
+	'query',
+	'rcode',
+	'answers',
+	'qclass',
+	'qtype',
+	'rcode_name',
+	'qclass_name',
+	'AA',
+	'TTLs',
+	'session_id',
+	'last_alert',
+	'version',
+	'server_name',
+	'cipher',
+	'issuer_subject',
+	'dst',
+	'peer_descr',
+	'msg',
+	'dropped',
+	'metric_index.host',
+	'p',
+	'actions',
+	'resp_size',
+	'client',
+	'status',
+	'direction',
+	'server',
+	'remote_location.country_code',
+	'location',
+	'port_proto',
+	'port_num',
+	'facility',
+	'severity',
+	'host_p',
+	'name',
+	'url',
+	'unparsed_version',
+	'software_type',
+	'request_body_len',
+	'response_body_len',
+	'uri',
+	'username',
+	'referrer',
+	'mime_type',
+	'md5',
+	'filename',
+	'method',
+	'content_len',
+	'nick',
+	'value',
+	'command',
+	'user',
+	'file_size',
+	'reply_msg',
+	'mime_desc',
+	'notice',
+	'failure_reason',
   ),
 
   // You probably don't want to touch anything below this line
   // unless you really know what you're doing
 
   // Primary field. By default Elastic Search has a special
-  // field called _all that is searched when no field is specified.
-  // Dropping _all can reduce index size significantly. If you do that
+  // field called ts that is searched when no field is specified.
+  // Dropping ts can reduce index size significantly. If you do that
   // you'll need to change primary_field to be '@message'
-  'primary_field' => '_all',
+  'primary_field' => '_source',
 
   // Default Elastic Search index to query
-  'default_index' => '_all',
+  'default_index' => 'bro',
 
   // default search settings
   'default_search' => array(
@@ -92,6 +166,6 @@ $KIBANA_CONFIG = array(
   'local_timezone' => date_default_timezone_get(),
 
   // Prevent wildcard search terms which result in extremely slow queries
-  // See: http://www.elasticsearch.org/guide/reference/query-dsl/wildcard-query.html
+  // See: http://www.elasticsearch.org/gtse/reference/query-dsl/wildcard-query.html
   'disable_fullscan' => false,
   );
